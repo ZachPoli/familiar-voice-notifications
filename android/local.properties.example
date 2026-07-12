@@ -1,0 +1,12 @@
+# Copy this file to android/local.properties for your local machine.
+# Do not commit android/local.properties.
+
+# Android Studio normally creates this line automatically.
+# Update it to match your own Android SDK path.
+sdk.dir=C\:\\Users\\your_name\\AppData\\Local\\Android\\Sdk
+
+# Backend used by the Android notification listener.
+VOICE_GLASSES_SERVER_URL=https://your-render-service.onrender.com/notification
+
+# Must match VOICE_GLASSES_API_KEY on the FastAPI host.
+VOICE_GLASSES_API_KEY=your_private_shared_app_key_here

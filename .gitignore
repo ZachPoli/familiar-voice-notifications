@@ -1,0 +1,28 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Generated audio and temporary files
+speech.mp3
+notification.mp3
+
+# Android Studio / Gradle
+android/.idea/
+android/.gradle/
+android/local.properties
+android/**/build/
+*.iml
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
