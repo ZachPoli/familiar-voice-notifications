@@ -1,6 +1,8 @@
-# Voice Glasses
+# FamiliarVoice Notifications
 
-**An accessibility-focused Android prototype that reads incoming messages in sender-specific familiar voices through connected audio devices, including Ray-Ban Meta glasses.**
+**An accessibility-focused Android prototype that reads incoming messages aloud using sender-specific familiar voices through connected audio devices.**
+
+Originally developed under the working name Voice Glasses, this MVP was physically tested with Ray-Ban Meta glasses, but the core concept is not limited to glasses. It can support smart glasses, Bluetooth earbuds, phone speakers, hearing devices, and other Android media outputs.
 
 > Built from a personal idea: my father and grandmother are blind, and I wanted messages from family to feel more personal than hearing every message through the same generic synthetic voice.
 
