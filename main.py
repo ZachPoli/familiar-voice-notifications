@@ -99,7 +99,7 @@ def require_voice_glasses_api_key(
     if not x_voice_glasses_key:
         raise HTTPException(
             status_code=401,
-            detail="Missing Voice Glasses API key.",
+            detail="Missing FamiliarVoice Notifications API key.",
         )
 
     if not hmac.compare_digest(
@@ -108,7 +108,7 @@ def require_voice_glasses_api_key(
     ):
         raise HTTPException(
             status_code=401,
-            detail="Invalid Voice Glasses API key.",
+            detail="Invalid FamiliarVoice Notifications API key.",
         )
 
 
@@ -180,12 +180,12 @@ def home():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Voice Glasses API</title>
+        <title>FamiliarVoice Notifications API</title>
     </head>
     <body>
-        <h1>Voice Glasses API</h1>
+        <h1>FamiliarVoice Notifications API</h1>
         <p>
-            The Voice Glasses backend is running.
+            The FamiliarVoice Notifications backend is running.
         </p>
         <p>
             Text-to-speech endpoints are intended for the paired
@@ -207,7 +207,7 @@ def health():
 
     return {
         "status": "ok",
-        "service": "voice-glasses",
+        "service": "familiar-voice-notifications",
     }
 
 
