@@ -314,7 +314,7 @@ VOICE_GLASSES_API_KEY=your_private_shared_app_key
 ```text
 Notification posted
         ↓
-Is Voice Glasses enabled?
+Is FamiliarVoice Notifications enabled?
         │
         ├── No → stop
         │
@@ -369,7 +369,7 @@ Voice cloning and familiar-voice features should be used only with appropriate c
 
 Ray-Ban Meta glasses include their own message announcement and automatic message readout features.
 
-During clean FamiliarVoice Notifications testing, those built-in features are disabled so that the Meta reader and Voice Glasses do not both announce the same message.
+During clean FamiliarVoice Notifications testing, those built-in features are disabled so that the Meta reader and FamiliarVoice Notifications do not both announce the same message.
 
 FamiliarVoice Notifications and Meta's built-in message reader are separate systems.
 
