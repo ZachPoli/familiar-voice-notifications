@@ -15,7 +15,7 @@ Watch the finished MVP demo:
 - [`demo/voice-glasses-mvp-demo.mp4`](demo/voice-glasses-mvp-demo.mp4)
 - [`DEMO.md`](DEMO.md) for the demo flow, technical explanation, and testing notes.
 
-The approximately 31-second recording demonstrates the Voice Glasses master speech control, a real SMS notification arriving, sender-specific speech generation, the FastAPI and ElevenLabs processing path, and the connected Ray-Ban Meta media route used during physical testing.
+The approximately 31-second recording demonstrates the FamiliarVoice Notifications master speech control, a real SMS notification arriving, sender-specific speech generation, the FastAPI and ElevenLabs processing path, and the connected Ray-Ban Meta media route used during physical testing.
 
 ---
 
@@ -23,7 +23,7 @@ The approximately 31-second recording demonstrates the Voice Glasses master spee
 
 **Working end-to-end MVP prototype**
 
-Voice Glasses has been physically tested with:
+FamiliarVoice Notifications has been physically tested with:
 
 - a Google Pixel 10a as the receiving device,
 - a Google Pixel 7a as the SMS sender,
@@ -41,7 +41,7 @@ Real text message arrives
         ↓
 Android notification listener detects it
         ↓
-Voice Glasses checks whether speech is enabled
+The app checks whether speech is enabled
         ↓
 Unsupported notifications are filtered out
         ↓
@@ -66,11 +66,11 @@ Audio is heard through Ray-Ban Meta glasses
 
 ## Why I Built This
 
-Voice Glasses was inspired by my father and grandmother, who are blind.
+FamiliarVoice Notifications was inspired by my father and grandmother, who are blind.
 
 Modern devices can already read notifications aloud, but the experience is usually impersonal: every message is spoken using the same system-generated voice.
 
-The idea behind Voice Glasses is simple:
+The idea behind the project is simple:
 
 > What if a message from someone you love could sound like that person?
 
@@ -140,7 +140,7 @@ The resulting audio is returned to the Android phone and played through the curr
                │
                ▼
 ┌──────────────────────────────┐
-│     Voice Glasses Android    │
+│     FamiliarVoice Android    │
 │                              │
 │ NotificationListenerService  │
 │ Master switch check          │
@@ -355,7 +355,7 @@ Additional applications can be supported in later milestones.
 
 ## Privacy and Consent Notes
 
-Voice Glasses processes message text by sending it from the Android phone to a backend service and then to ElevenLabs for speech generation.
+FamiliarVoice Notifications processes message text by sending it from the Android phone to a backend service and then to ElevenLabs for speech generation.
 
 That means message content can leave the device during the current prototype flow.
 
@@ -369,11 +369,11 @@ Voice cloning and familiar-voice features should be used only with appropriate c
 
 Ray-Ban Meta glasses include their own message announcement and automatic message readout features.
 
-During clean Voice Glasses testing, those built-in features are disabled so that the Meta reader and Voice Glasses do not both announce the same message.
+During clean FamiliarVoice Notifications testing, those built-in features are disabled so that the Meta reader and Voice Glasses do not both announce the same message.
 
-Voice Glasses and Meta's built-in message reader are separate systems.
+FamiliarVoice Notifications and Meta's built-in message reader are separate systems.
 
-Voice Glasses does not use a private or custom Ray-Ban Meta API. The prototype uses standard Android media playback through the active media route.
+FamiliarVoice Notifications does not use a private or custom Ray-Ban Meta API. The prototype uses standard Android media playback through the active media route.
 
 ---
 
@@ -405,7 +405,7 @@ The prototype has successfully demonstrated:
 
 ## Current Limitations
 
-Voice Glasses is a working technical prototype, not a production application.
+FamiliarVoice Notifications is a working technical prototype, not a production application.
 
 Current limitations include:
 
