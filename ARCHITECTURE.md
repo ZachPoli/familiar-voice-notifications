@@ -297,6 +297,33 @@ need durable mounted storage for persistence.
 
 ---
 
+## Local Persistence Verification
+
+Milestone 15C-1 exercises the storage and management layers without using
+the normal local database. Integration tests create synthetic mappings in
+temporary SQLite files, cross multiple FastAPI lifespan contexts, mock the
+audio-generation boundary, and verify that notification and management
+credentials cannot substitute for one another.
+
+The count-only bootstrap helper requires an explicit new temporary path. It
+may load local environment configuration but returns only approved counts
+and boolean validation results. It does not return profile identifiers,
+display names, aliases, voice IDs, credentials, environment values, or
+database rows.
+
+The process-restart verifier launches separate short-lived Uvicorn
+processes against the same synthetic temporary database. It creates a
+mapping, stops the first process, verifies persistence from a second
+process, deletes the mapping, stops the server, and removes the database
+and SQLite sidecars even when verification fails.
+
+Hosted persistence assessment and the real Android SMS test are deferred
+to Milestone 15C-2. Before those tests, the deployed repository source,
+durable disk, mount path, and hosted database configuration must be
+confirmed. The existing Android notification flow remains unchanged.
+
+---
+
 ## Audio Generation and Playback
 
 The backend sends text to ElevenLabs and returns the generated MP3 stream to Android.

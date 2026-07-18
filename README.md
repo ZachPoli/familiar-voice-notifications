@@ -312,6 +312,50 @@ is prototype administrator authentication, not final user authentication.
 The management admin key must never be embedded in the Android app or
 placed in Android configuration.
 
+### Local Persistence Verification
+
+Milestone 15C-1 verifies bootstrap, management CRUD, notification lookup,
+authentication separation, and persistence across application and process
+restarts. Automated tests use synthetic values and temporary SQLite
+databases only; they do not use the normal local mapping database or call
+ElevenLabs.
+
+The local bootstrap helper requires an explicit new temporary database:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\verify_local_mapping_bootstrap.py --database <temporary-database-path>
+```
+
+It may load private local configuration, but reports only database-created
+and bootstrap-marker booleans, profile and alias counts, configured-voice
+counts, and blank/duplicate-alias booleans. It never prints mapping values,
+credentials, environment values, or database rows, and it refuses the
+normal default database path. Both verification scripts also refuse to run
+when the selected database, WAL, or SHM file already exists.
+
+The separate-process verifier uses synthetic configuration, starts two
+short-lived Uvicorn processes against one explicit temporary database,
+confirms a mapping survives restart, deletes it, and removes the temporary
+database and SQLite sidecars:
+
+```powershell
+.\scripts\verify_process_restart.ps1 -DatabasePath <temporary-database-path>
+```
+
+On systems that block unsigned PowerShell scripts, use a process-scoped
+execution-policy bypass:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify_process_restart.ps1 -DatabasePath <temporary-database-path>
+```
+
+This bypass applies only to the launched PowerShell process. Do not change
+the machine-wide execution policy for this verification.
+
+Hosted durable-storage verification and the real Android SMS test remain
+part of Milestone 15C-2. They should not begin until the hosted repository
+source and persistent-disk configuration are confirmed.
+
 Install backend dependencies:
 
 ```powershell

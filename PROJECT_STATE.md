@@ -10,9 +10,10 @@ The project was inspired by Zach's father and grandmother, who are blind. The go
 
 ## Current Status
 
-The first complete end-to-end MVP prototype is working. The Milestone 15A
-SQLite voice-mapping storage foundation and Milestone 15B voice-mapping
-management API are complete.
+The first complete end-to-end MVP prototype is working. Milestone 15A's
+SQLite voice-mapping storage foundation, Milestone 15B's voice-mapping
+management API, and Milestone 15C-1's local persistent-mapping verification
+are complete.
 
 The project has now demonstrated:
 
@@ -32,7 +33,8 @@ The project has now demonstrated:
 The public-readiness security pass is complete. A clean public
 recruiter-facing repository was created and audited. Product development
 has resumed with persistent voice mappings. The current automated suite
-has 52 passing tests, and Milestone 15C is the next development target.
+has 68 passing tests. Milestone 15C remains in progress, with hosted
+persistence and Android verification as the next development target.
 
 ---
 
@@ -138,6 +140,19 @@ the source of truth afterward, so later environment changes do not
 overwrite or recreate stored mappings. A populated database is treated as
 user-owned and is not overwritten.
 
+### Local Persistence Verification
+
+Milestone 15C-1 verified synthetic bootstrap, persistent CRUD operations,
+notification lookup, normalization, fallback behavior, and authentication
+separation using temporary SQLite databases. Mappings survived repeated
+FastAPI lifespan startups and separate Uvicorn process restarts; updates and
+deletions also remained persistent.
+
+The real local configuration successfully bootstrapped into an isolated
+disposable database through a count-and-boolean-only verification report.
+The normal local database was not modified. No production or Android changes
+were required, and all 68 automated tests pass.
+
 ### ElevenLabs
 
 Used for sender-specific speech generation.
@@ -204,8 +219,8 @@ Known limitations:
 - current automatic playback may duplicate or overlap TalkBack speech,
 - accessible on-demand playback is planned,
 - the product must remain usable with TalkBack enabled,
-- automated coverage includes 52 storage, management API, authentication,
-  validation, privacy, and compatibility tests,
+- automated coverage includes 68 storage, management API, authentication,
+  validation, privacy, persistence, and compatibility tests,
 - free-tier hosted backend cold starts can affect latency,
 - and the current app-key protection is a prototype security measure, not a full production auth system.
 
@@ -231,20 +246,18 @@ Play production release.
 
 ## Immediate Priority
 
-Milestone 15C — End-to-End Persistent Mapping Verification:
+Milestone 15C-2 — Hosted Persistence and Android Verification:
 
 ```text
-verify local bootstrap with private environment configuration
+identify the Render source repository and deployed commit
         ↓
-exercise CRUD against a temporary or controlled local database
+determine and configure a durable hosted-storage approach
         ↓
-confirm notification lookup uses stored SQLite mappings
+prove a synthetic hosted mapping survives restart or redeployment
         ↓
-retest known and unknown sender behavior without exposing credentials
-        ↓
-evaluate hosted persistent-storage requirements
+run a controlled real SMS test through the Android app
 ```
 
-This verification will preserve the working Android notification flow and
-will evaluate hosted storage requirements before any production deployment
-changes are made.
+Hosted persistence and the real Android SMS test remain incomplete. This
+work will preserve the working Android notification flow while verifying
+known-sender routing and unknown-sender fallback on physical hardware.

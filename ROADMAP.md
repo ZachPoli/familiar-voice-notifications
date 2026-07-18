@@ -194,10 +194,38 @@ CRUD behavior.
 
 ### Milestone 15C — End-to-End Persistent Mapping Verification
 
-Status: Not Started ⬜
+Status: In Progress 🟡
 
 Verify persistent mappings with the existing Android notification workflow
 and with hosted and local deployment behavior.
+
+### Milestone 15C-1 — Local Persistent Mapping Verification
+
+Status: Complete ✅
+
+Verified synthetic bootstrap behavior and persistence across repeated
+FastAPI lifespans and separate Uvicorn process restarts. CRUD updates and
+deletions remained persistent, notification lookup used stored SQLite
+mappings, case and whitespace normalization worked, and unknown senders
+retained the default-voice fallback. Management and notification
+authentication remained separate.
+
+The real local configuration also bootstrapped successfully into an isolated
+disposable database, with reporting limited to counts and booleans. All 68
+automated tests pass. The verification scripts refuse unsafe or pre-existing
+database files and clean up only files they create.
+
+### Milestone 15C-2 — Hosted Persistence and Android Verification
+
+Status: Not Started ⬜
+
+This milestone will identify the current Render source repository and
+deployed commit, determine whether durable persistent storage is available,
+and configure a durable SQLite path or choose another safe hosted-storage
+approach. It will then deploy the reviewed public repository, prove that a
+synthetic hosted mapping survives restart or redeployment, and perform a
+controlled real SMS test through the Android app. Physical-hardware testing
+will verify known-sender routing and unknown-sender fallback.
 
 ### Milestone 16 — Contact Voice Assignment UI
 
@@ -358,19 +386,18 @@ documentation when each release milestone begins.
 
 ## Current Priority
 
-The immediate priority is Milestone 15C — End-to-End Persistent Mapping
+The immediate priority is Milestone 15C-2 — Hosted Persistence and Android
 Verification:
 
 ```text
-verify controlled local bootstrap
+identify the Render source repository and deployed commit
     ↓
-exercise persistent mapping CRUD
+confirm or configure durable hosted storage
     ↓
-retest stored known and unknown sender lookup
+deploy and verify persistence across restart or redeployment
     ↓
-evaluate hosted persistent storage
+run a controlled Android SMS test on physical hardware
 ```
 
-Milestone 15C will verify the completed storage and management layers with
-the existing Android notification workflow before hosted deployment
-behavior changes.
+Hosted persistence and the real Android SMS workflow remain unverified and
+are the remaining work for Milestone 15C.
