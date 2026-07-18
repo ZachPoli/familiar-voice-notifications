@@ -200,10 +200,32 @@ Known limitations:
 - hosted persistence requires durable mounted storage,
 - there is no explicit message queue,
 - retry/offline behavior is limited,
+- TalkBack coexistence has not yet been tested,
+- current automatic playback may duplicate or overlap TalkBack speech,
+- accessible on-demand playback is planned,
+- the product must remain usable with TalkBack enabled,
 - automated coverage includes 52 storage, management API, authentication,
   validation, privacy, and compatibility tests,
 - free-tier hosted backend cold starts can affect latency,
 - and the current app-key protection is a prototype security measure, not a full production auth system.
+
+---
+
+## Future Accessibility and Release Work
+
+TalkBack coexistence and accessible playback require dedicated design and
+physical testing. Future work will preserve original notifications,
+provide an accessible on-demand playback option, test audio focus and
+screen-reader navigation, and validate the experience with blind users.
+
+Google Play internal testing, closed beta, and production release are
+planned but have not started. Release readiness requires privacy and
+consent work, Play Console declarations, a signed Android App Bundle,
+compliance with the target-SDK requirement current at release time,
+accessibility testing, and meaningful beta feedback.
+
+The current build is a working prototype and is not yet ready for a Google
+Play production release.
 
 ---
 

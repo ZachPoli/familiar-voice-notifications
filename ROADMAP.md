@@ -252,6 +252,108 @@ Status: Not Started ⬜
 
 Review the app with accessibility-first UI expectations and eventually test with target users.
 
+### Milestone 22A — TalkBack Coexistence and Accessible Playback
+
+Status: Not Started ⬜
+
+Goal:
+
+Ensure FamiliarVoice Notifications works alongside Android TalkBack
+without confusing duplicate or overlapping speech.
+
+This milestone includes:
+
+- testing how TalkBack announces original message notifications while
+  FamiliarVoice is active,
+- providing user-selectable automatic, accessible on-demand, and paused
+  playback modes,
+- adding a TalkBack-accessible notification action such as
+  "Play in familiar voice",
+- supporting double-tap activation and complete screen-reader navigation,
+- testing Android audio-focus behavior,
+- preserving the original notification without interfering with TalkBack,
+- and completing physical testing with blind users.
+
+This work is required before a public production release, but it is not
+the current development priority.
+
+---
+
+## Phase 6 — Google Play Beta and Public Release
+
+### Milestone 23 — Play Console and Publisher Setup
+
+Status: Not Started ⬜
+
+- create and verify the Google Play developer account,
+- decide between a personal or organization publishing identity,
+- finalize the public app name, publisher name, application ID, and support
+  contact,
+- and treat the application ID as permanent before the first public release.
+
+### Milestone 24 — Privacy, Consent, and Store Policy Readiness
+
+Status: Not Started ⬜
+
+- publish a public privacy-policy webpage,
+- provide the privacy policy in the app,
+- add prominent disclosure and affirmative consent before notification
+  message processing,
+- complete an accurate Google Play Data safety declaration,
+- define data retention and deletion policies,
+- disclose backend and third-party speech processing,
+- and prepare Play Store listing text, icon, screenshots, feature graphic,
+  and reviewer instructions.
+
+### Milestone 25 — Release Build and Play Signing
+
+Status: Not Started ⬜
+
+- upgrade compile and target SDKs to the Google Play requirement current at
+  release time,
+- currently plan for Android 16 / API 36,
+- finalize release `versionCode` and `versionName`,
+- configure release signing and Play App Signing,
+- generate and validate an Android App Bundle,
+- and run release-mode testing and pre-launch checks.
+
+### Milestone 26 — Google Play Internal Testing
+
+Status: Not Started ⬜
+
+- upload the first release bundle to the internal-testing track,
+- distribute it to trusted testers,
+- verify installation, upgrading, onboarding, TalkBack use, notification
+  access, voice mapping, and audio playback,
+- and collect and triage feedback before wider testing.
+
+### Milestone 27 — Closed Beta and Production Access
+
+Status: Not Started ⬜
+
+- recruit the tester count required by the developer-account type,
+- for a qualifying new personal account, plan for at least 12 continuously
+  opted-in testers for 14 days,
+- gather meaningful accessibility, reliability, privacy, and usability
+  feedback,
+- fix beta findings,
+- and complete the Google Play production-access application.
+
+### Milestone 28 — Public Production Release
+
+Status: Not Started ⬜
+
+- complete all Play Console declarations,
+- resolve policy and pre-launch findings,
+- submit the production release,
+- monitor crashes, reviews, backend reliability, privacy issues, and support
+  requests,
+- use a staged rollout if appropriate,
+- and maintain update and incident-response procedures.
+
+Google Play requirements must be rechecked against current official
+documentation when each release milestone begins.
+
 ---
 
 ## Current Priority
