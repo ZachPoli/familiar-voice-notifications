@@ -182,10 +182,15 @@ transactions, bootstrap protection, and unknown-sender fallback behavior.
 
 ### Milestone 15B — Voice Mapping Management API
 
-Status: Not Started ⬜
+Status: Complete ✅
 
-Add safe backend CRUD operations for viewing, creating, editing, and
-deleting voice mappings.
+Added eight authenticated CRUD endpoints. Voice profiles can be listed,
+created, read, updated, and deleted, while sender aliases can be added,
+updated, and deleted. Management uses the separate
+`VOICE_MAPPINGS_ADMIN_KEY`. Voice IDs are write-only and are never returned
+through management responses. Automated tests cover validation,
+authentication separation, transaction safety, privacy-safe errors, and
+CRUD behavior.
 
 ### Milestone 15C — End-to-End Persistent Mapping Verification
 
@@ -251,18 +256,19 @@ Review the app with accessibility-first UI expectations and eventually test with
 
 ## Current Priority
 
-The immediate priority is Milestone 15B — Voice Mapping Management API:
+The immediate priority is Milestone 15C — End-to-End Persistent Mapping
+Verification:
 
 ```text
-define safe mapping operations
+verify controlled local bootstrap
     ↓
-add backend CRUD endpoints
+exercise persistent mapping CRUD
     ↓
-test validation and persistence behavior
+retest stored known and unknown sender lookup
     ↓
-prepare end-to-end verification
+evaluate hosted persistent storage
 ```
 
-Milestone 15B will make the completed SQLite foundation manageable before
-the existing Android notification flow is verified against persistent
-mappings in Milestone 15C.
+Milestone 15C will verify the completed storage and management layers with
+the existing Android notification workflow before hosted deployment
+behavior changes.

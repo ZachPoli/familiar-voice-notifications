@@ -189,9 +189,18 @@ GET  /              public status page
 GET  /health        lightweight health check
 POST /speak         text-to-speech test endpoint
 POST /notification  notification-to-speech endpoint
+GET/POST/PATCH/DELETE /voice-profiles management endpoints
+POST   /voice-profiles/{profile_id}/aliases
+PATCH/DELETE /sender-aliases/{alias_id}
 ```
 
 When `VOICE_GLASSES_API_KEY` is set on the backend, `/speak` and `/notification` require the matching `X-Voice-Glasses-Key` request header.
+
+Voice-mapping management uses a separate administrator boundary.
+Management routes require `VOICE_MAPPINGS_ADMIN_KEY` through the
+`X-Voice-Mappings-Admin-Key` request header. If the server key is not
+configured, management is disabled with a `503` response. This admin key
+must not be embedded in the Android app.
 
 ---
 
@@ -206,6 +215,7 @@ EMILY_VOICE_ID
 ZACH_SENDER_ALIASES
 EMILY_SENDER_ALIASES
 VOICE_GLASSES_API_KEY
+VOICE_MAPPINGS_ADMIN_KEY
 VOICE_MAPPINGS_DB_PATH
 ```
 
@@ -215,6 +225,11 @@ The `ZACH_*` and `EMILY_*` values are optional first-run seed inputs for
 the SQLite voice-mapping database. They are not reapplied after bootstrap.
 
 `VOICE_GLASSES_API_KEY` protects hosted TTS endpoints from unauthenticated public use.
+
+`VOICE_MAPPINGS_ADMIN_KEY` separately protects profile and alias management.
+It is prototype administrator authentication rather than production user
+authentication. Management responses never return full or partial voice
+IDs; they report only whether a voice ID is configured.
 
 `VOICE_MAPPINGS_DB_PATH` selects the SQLite database location. Its local
 default is `data/voice_mappings.sqlite3`, resolved from the backend
@@ -251,6 +266,34 @@ DEFAULT_VOICE_ID
 The SQLite file contains private sender aliases and voice IDs. It is
 prototype storage and is not encrypted. A contact-management and
 voice-assignment interface is not part of this foundation milestone.
+
+---
+
+## Voice-Mapping Management Flow
+
+```text
+Administrator request
+        ↓
+X-Voice-Mappings-Admin-Key validation
+        ↓
+Pydantic request validation
+        ↓
+Transactional SQLite profile or alias operation
+        ↓
+Response with normalized aliases and voice-ID configured state
+```
+
+Profile creation and updates accept voice IDs as write-only values. Reads
+return profile IDs, profile keys, display names, normalized aliases, and a
+boolean configured state. Profile deletion uses the SQLite foreign key to
+cascade-delete aliases. Duplicate profile keys or aliases return safe
+client errors without exposing SQLite details or private values.
+
+Notification authentication and management authentication remain separate:
+the Android notification flow continues to use `VOICE_GLASSES_API_KEY`,
+while only administrator tooling should use `VOICE_MAPPINGS_ADMIN_KEY`.
+SQLite remains unencrypted prototype storage, and hosted deployments still
+need durable mounted storage for persistence.
 
 ---
 

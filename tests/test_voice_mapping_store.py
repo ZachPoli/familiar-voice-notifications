@@ -356,3 +356,272 @@ def test_conflicting_bootstrap_aliases_roll_back(tmp_path, monkeypatch):
 
     assert profile_count == 0
     assert marker is None
+
+
+def test_list_profiles_is_empty_and_then_ordered(tmp_path):
+    database_path = tmp_path / "mappings.sqlite3"
+    store.initialize_database(database_path)
+
+    assert store.list_voice_profiles(database_path) == []
+
+    first_id = store.add_voice_profile(
+        "first_profile",
+        "First Profile",
+        "voice-one",
+        ["First Alias"],
+        database_path,
+    )
+    second_id = store.add_voice_profile(
+        "second_profile",
+        "Second Profile",
+        "voice-two",
+        ["Second Alias", "Second Alternate"],
+        database_path,
+    )
+
+    profiles = store.list_voice_profiles(database_path)
+
+    assert [profile["id"] for profile in profiles] == [first_id, second_id]
+    assert [
+        alias["id"]
+        for alias in profiles[1]["aliases"]
+    ] == sorted(alias["id"] for alias in profiles[1]["aliases"])
+    assert "voice_id" not in profiles[0]
+    assert profiles[0]["voice_id_configured"] is True
+
+
+def test_create_read_and_update_voice_profile(tmp_path):
+    database_path = tmp_path / "mappings.sqlite3"
+    store.initialize_database(database_path)
+    profile_id = store.add_voice_profile(
+        "original_profile",
+        "Original Name",
+        "original-voice",
+        ["Primary Alias", "Alternate Alias"],
+        database_path,
+    )
+
+    created_profile = store.get_voice_profile(profile_id, database_path)
+    updated_profile = store.update_voice_profile(
+        profile_id,
+        profile_key="updated_profile",
+        display_name="Updated Name",
+        voice_id="updated-voice",
+        database_path=database_path,
+    )
+
+    assert created_profile["profile_key"] == "original_profile"
+    assert len(created_profile["aliases"]) == 2
+    assert updated_profile["profile_key"] == "updated_profile"
+    assert updated_profile["display_name"] == "Updated Name"
+    assert updated_profile["voice_id_configured"] is True
+    assert "voice_id" not in updated_profile
+    assert (
+        store.find_voice_id_for_sender("Primary Alias", database_path)
+        == "updated-voice"
+    )
+
+
+def test_add_update_same_value_and_delete_sender_alias(tmp_path):
+    database_path = tmp_path / "mappings.sqlite3"
+    store.initialize_database(database_path)
+    profile_id = store.add_voice_profile(
+        "profile",
+        "Profile",
+        "voice-one",
+        ["Initial Alias"],
+        database_path,
+    )
+
+    alias = store.add_sender_alias(
+        profile_id,
+        "  Added   Alias ",
+        database_path,
+    )
+    same_alias = store.update_sender_alias(
+        alias["id"],
+        "ADDED ALIAS",
+        database_path,
+    )
+    updated_alias = store.update_sender_alias(
+        alias["id"],
+        "Replacement Alias",
+        database_path,
+    )
+    store.delete_sender_alias(alias["id"], database_path)
+
+    assert alias["normalized_alias"] == "added alias"
+    assert same_alias == alias
+    assert updated_alias["normalized_alias"] == "replacement alias"
+    assert (
+        store.find_voice_id_for_sender("Replacement Alias", database_path)
+        is None
+    )
+
+
+def test_delete_profile_cascades_all_aliases(tmp_path):
+    database_path = tmp_path / "mappings.sqlite3"
+    store.initialize_database(database_path)
+    profile_id = store.add_voice_profile(
+        "profile",
+        "Profile",
+        "voice-one",
+        ["First Alias", "Second Alias"],
+        database_path,
+    )
+
+    store.delete_voice_profile(profile_id, database_path)
+
+    assert store.list_voice_profiles(database_path) == []
+    with database_connection(database_path) as connection:
+        alias_count = connection.execute(
+            "SELECT COUNT(*) FROM sender_aliases"
+        ).fetchone()[0]
+    assert alias_count == 0
+
+
+def test_unknown_management_ids_raise_not_found(tmp_path):
+    database_path = tmp_path / "mappings.sqlite3"
+    store.initialize_database(database_path)
+
+    with pytest.raises(store.VoiceProfileNotFoundError):
+        store.get_voice_profile(999, database_path)
+    with pytest.raises(store.VoiceProfileNotFoundError):
+        store.update_voice_profile(
+            999,
+            display_name="Missing",
+            database_path=database_path,
+        )
+    with pytest.raises(store.VoiceProfileNotFoundError):
+        store.delete_voice_profile(999, database_path)
+    with pytest.raises(store.VoiceProfileNotFoundError):
+        store.add_sender_alias(999, "Alias", database_path)
+    with pytest.raises(store.SenderAliasNotFoundError):
+        store.update_sender_alias(999, "Alias", database_path)
+    with pytest.raises(store.SenderAliasNotFoundError):
+        store.delete_sender_alias(999, database_path)
+
+
+def test_duplicate_profile_key_fails_without_partial_update(tmp_path):
+    database_path = tmp_path / "mappings.sqlite3"
+    store.initialize_database(database_path)
+    first_id = store.add_voice_profile(
+        "first_profile",
+        "First",
+        "voice-one",
+        ["First Alias"],
+        database_path,
+    )
+    second_id = store.add_voice_profile(
+        "second_profile",
+        "Second",
+        "voice-two",
+        ["Second Alias"],
+        database_path,
+    )
+
+    with pytest.raises(store.ProfileKeyConflictError):
+        store.update_voice_profile(
+            second_id,
+            profile_key="first_profile",
+            display_name="Should Not Persist",
+            database_path=database_path,
+        )
+
+    assert store.get_voice_profile(first_id, database_path)[
+        "display_name"
+    ] == "First"
+    second_profile = store.get_voice_profile(second_id, database_path)
+    assert second_profile["profile_key"] == "second_profile"
+    assert second_profile["display_name"] == "Second"
+
+
+def test_duplicate_alias_update_fails_without_partial_change(tmp_path):
+    database_path = tmp_path / "mappings.sqlite3"
+    store.initialize_database(database_path)
+    first_id = store.add_voice_profile(
+        "first_profile",
+        "First",
+        "voice-one",
+        ["First Alias"],
+        database_path,
+    )
+    second_id = store.add_voice_profile(
+        "second_profile",
+        "Second",
+        "voice-two",
+        ["Second Alias"],
+        database_path,
+    )
+    first_alias_id = store.get_voice_profile(first_id, database_path)[
+        "aliases"
+    ][0]["id"]
+    second_alias_id = store.get_voice_profile(second_id, database_path)[
+        "aliases"
+    ][0]["id"]
+
+    with pytest.raises(store.SenderAliasConflictError):
+        store.update_sender_alias(
+            second_alias_id,
+            "First Alias",
+            database_path,
+        )
+
+    second_profile = store.get_voice_profile(second_id, database_path)
+    assert second_profile["aliases"][0]["normalized_alias"] == "second alias"
+    assert first_alias_id != second_alias_id
+
+
+def test_management_operations_close_every_connection(tmp_path, monkeypatch):
+    database_path = tmp_path / "mappings.sqlite3"
+    store.initialize_database(database_path)
+    original_connect_database = store.connect_database
+    tracked_connections = []
+
+    class TrackingConnection:
+        def __init__(self, connection):
+            self.connection = connection
+            self.closed = False
+
+        def __getattr__(self, name):
+            return getattr(self.connection, name)
+
+        def __enter__(self):
+            self.connection.__enter__()
+            return self
+
+        def __exit__(self, *arguments):
+            return self.connection.__exit__(*arguments)
+
+        def close(self):
+            self.closed = True
+            self.connection.close()
+
+    def tracking_connect_database(path=None):
+        tracked = TrackingConnection(original_connect_database(path))
+        tracked_connections.append(tracked)
+        return tracked
+
+    monkeypatch.setattr(store, "connect_database", tracking_connect_database)
+
+    profile_id = store.add_voice_profile(
+        "profile",
+        "Profile",
+        "voice-one",
+        ["First Alias"],
+        database_path,
+    )
+    store.list_voice_profiles(database_path)
+    profile = store.get_voice_profile(profile_id, database_path)
+    store.update_voice_profile(
+        profile_id,
+        display_name="Updated",
+        database_path=database_path,
+    )
+    alias = store.add_sender_alias(profile_id, "Second Alias", database_path)
+    store.update_sender_alias(alias["id"], "Third Alias", database_path)
+    store.delete_sender_alias(alias["id"], database_path)
+    store.delete_voice_profile(profile["id"], database_path)
+
+    assert tracked_connections
+    assert all(connection.closed for connection in tracked_connections)

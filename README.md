@@ -245,6 +245,7 @@ EMILY_VOICE_ID=your_emily_voice_id
 ZACH_SENDER_ALIASES=sender_one,sender_one_full_name
 EMILY_SENDER_ALIASES=sender_two
 VOICE_GLASSES_API_KEY=your_private_shared_app_key
+VOICE_MAPPINGS_ADMIN_KEY=your_private_management_admin_key
 VOICE_MAPPINGS_DB_PATH=data/voice_mappings.sqlite3
 ```
 
@@ -284,6 +285,33 @@ This SQLite database is prototype storage and is not encrypted. Voice
 IDs and private sender aliases must not be committed or placed in public
 documentation.
 
+### Voice-Mapping Management API
+
+The backend provides a prototype administrator API for managing voice
+profiles and sender aliases:
+
+```text
+GET    /voice-profiles
+POST   /voice-profiles
+GET    /voice-profiles/{profile_id}
+PATCH  /voice-profiles/{profile_id}
+DELETE /voice-profiles/{profile_id}
+POST   /voice-profiles/{profile_id}/aliases
+PATCH  /sender-aliases/{alias_id}
+DELETE /sender-aliases/{alias_id}
+```
+
+These routes use a separate `VOICE_MAPPINGS_ADMIN_KEY`, sent in the
+`X-Voice-Mappings-Admin-Key` header. When the server key is not configured,
+management routes are disabled and return `503`. Missing or incorrect
+credentials return `401`.
+
+Voice IDs are write-only: create and update requests can supply them, but
+management responses return only whether a voice ID is configured. This
+is prototype administrator authentication, not final user authentication.
+The management admin key must never be embedded in the Android app or
+placed in Android configuration.
+
 Install backend dependencies:
 
 ```powershell
@@ -303,6 +331,7 @@ GET  /          public status page
 GET  /health    lightweight health check
 POST /speak     protected TTS test endpoint when VOICE_GLASSES_API_KEY is set
 POST /notification protected notification-to-speech endpoint when VOICE_GLASSES_API_KEY is set
+GET/POST/PATCH/DELETE voice-mapping management routes protected by VOICE_MAPPINGS_ADMIN_KEY
 ```
 
 ---

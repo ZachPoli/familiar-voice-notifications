@@ -10,8 +10,9 @@ The project was inspired by Zach's father and grandmother, who are blind. The go
 
 ## Current Status
 
-The first complete end-to-end MVP prototype is working, and the Milestone
-15A SQLite voice-mapping storage foundation is complete.
+The first complete end-to-end MVP prototype is working. The Milestone 15A
+SQLite voice-mapping storage foundation and Milestone 15B voice-mapping
+management API are complete.
 
 The project has now demonstrated:
 
@@ -23,14 +24,15 @@ The project has now demonstrated:
 - ElevenLabs text-to-speech generation,
 - sender-specific voice routing,
 - persistent SQLite voice-mapping storage,
+- authenticated voice-profile and sender-alias management,
 - MP3 return to Android,
 - Android MediaPlayer playback,
 - and audio output through Ray-Ban Meta glasses.
 
 The public-readiness security pass is complete. A clean public
 recruiter-facing repository was created and audited. Product development
-has resumed with persistent voice mappings, and Milestone 15B is the next
-target.
+has resumed with persistent voice mappings. The current automated suite
+has 52 passing tests, and Milestone 15C is the next development target.
 
 ---
 
@@ -105,6 +107,11 @@ Responsibilities:
 - optionally require a private app-to-backend key,
 - validate message content,
 - select a voice based on sender name,
+- provide authenticated profile listing,
+- create, read, update, and delete voice profiles,
+- create, update, and delete sender aliases,
+- accept voice IDs as write-only management values,
+- return safe conflict and not-found responses,
 - call ElevenLabs text-to-speech,
 - and stream MP3 audio back to Android.
 
@@ -148,6 +155,7 @@ ELEVENLABS_API_KEY
 ZACH_VOICE_ID
 EMILY_VOICE_ID
 VOICE_GLASSES_API_KEY
+VOICE_MAPPINGS_ADMIN_KEY
 ```
 
 Android private/local values:
@@ -165,6 +173,17 @@ android/local.properties
 
 That file is ignored by Git.
 
+### Authentication Boundaries
+
+The existing Android and TTS request flow is protected by
+`VOICE_GLASSES_API_KEY`. Administrator voice-mapping operations use the
+separate `VOICE_MAPPINGS_ADMIN_KEY`. The administrator key must never be
+embedded in Android or placed in Android configuration.
+
+This is prototype administrator authentication, not a final end-user
+authentication and authorization system. Management currently requires
+direct developer or administrator API access.
+
 ---
 
 ## Current Limitations
@@ -174,13 +193,15 @@ Voice Glasses is still a prototype, not a production app.
 Known limitations:
 
 - only Google Messages is currently supported,
-- there is not yet a voice-mapping management API,
-- there is not yet a contact-assignment UI,
+- there is no Android contact or voice-assignment UI yet,
+- there is no end-user authentication system yet,
+- management currently requires developer or administrator API access,
 - the SQLite database is not encrypted,
 - hosted persistence requires durable mounted storage,
 - there is no explicit message queue,
 - retry/offline behavior is limited,
-- automated coverage is currently focused on the SQLite storage foundation,
+- automated coverage includes 52 storage, management API, authentication,
+  validation, privacy, and compatibility tests,
 - free-tier hosted backend cold starts can affect latency,
 - and the current app-key protection is a prototype security measure, not a full production auth system.
 
@@ -188,14 +209,20 @@ Known limitations:
 
 ## Immediate Priority
 
-Milestone 15B — Voice Mapping Management API:
+Milestone 15C — End-to-End Persistent Mapping Verification:
 
 ```text
-define safe mapping operations
+verify local bootstrap with private environment configuration
         ↓
-add backend create/read/update/delete behavior
+exercise CRUD against a temporary or controlled local database
         ↓
-test validation and persistent changes
+confirm notification lookup uses stored SQLite mappings
         ↓
-prepare Milestone 15C end-to-end verification
+retest known and unknown sender behavior without exposing credentials
+        ↓
+evaluate hosted persistent-storage requirements
 ```
+
+This verification will preserve the working Android notification flow and
+will evaluate hosted storage requirements before any production deployment
+changes are made.

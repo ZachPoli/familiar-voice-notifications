@@ -50,6 +50,30 @@ ENVIRONMENT_PROFILES = (
 )
 
 
+class VoiceMappingNotFoundError(ValueError):
+    """Base error for missing voice-mapping records."""
+
+
+class VoiceProfileNotFoundError(VoiceMappingNotFoundError):
+    """Raised when a requested voice profile does not exist."""
+
+
+class SenderAliasNotFoundError(VoiceMappingNotFoundError):
+    """Raised when a requested sender alias does not exist."""
+
+
+class VoiceMappingConflictError(ValueError):
+    """Base error for voice-mapping uniqueness conflicts."""
+
+
+class ProfileKeyConflictError(VoiceMappingConflictError):
+    """Raised when a profile key is already in use."""
+
+
+class SenderAliasConflictError(VoiceMappingConflictError):
+    """Raised when a normalized sender alias is already in use."""
+
+
 def normalize_alias(value: str) -> str:
     """Normalize an alias for exact storage and matching."""
 
@@ -131,6 +155,93 @@ def _insert_voice_profile(
     return profile_id
 
 
+def _profile_key_exists(
+    connection: sqlite3.Connection,
+    profile_key: str,
+    excluded_profile_id: int | None = None,
+) -> bool:
+    query = "SELECT 1 FROM voice_profiles WHERE profile_key = ?"
+    parameters: tuple[str] | tuple[str, int] = (profile_key,)
+
+    if excluded_profile_id is not None:
+        query += " AND id != ?"
+        parameters = (profile_key, excluded_profile_id)
+
+    return connection.execute(query, parameters).fetchone() is not None
+
+
+def _alias_exists(
+    connection: sqlite3.Connection,
+    normalized_alias: str,
+    excluded_alias_id: int | None = None,
+) -> bool:
+    query = (
+        "SELECT 1 FROM sender_aliases WHERE normalized_alias = ?"
+    )
+    parameters: tuple[str] | tuple[str, int] = (normalized_alias,)
+
+    if excluded_alias_id is not None:
+        query += " AND id != ?"
+        parameters = (normalized_alias, excluded_alias_id)
+
+    return connection.execute(query, parameters).fetchone() is not None
+
+
+def _fetch_aliases(
+    connection: sqlite3.Connection,
+    profile_id: int,
+) -> list[dict[str, int | str]]:
+    rows = connection.execute(
+        """
+        SELECT id, normalized_alias
+        FROM sender_aliases
+        WHERE voice_profile_id = ?
+        ORDER BY id
+        """,
+        (profile_id,),
+    ).fetchall()
+
+    return [
+        {
+            "id": row["id"],
+            "normalized_alias": row["normalized_alias"],
+        }
+        for row in rows
+    ]
+
+
+def _profile_result(
+    connection: sqlite3.Connection,
+    row: sqlite3.Row,
+) -> dict[str, object]:
+    return {
+        "id": row["id"],
+        "profile_key": row["profile_key"],
+        "display_name": row["display_name"],
+        "voice_id_configured": bool(row["voice_id"]),
+        "aliases": _fetch_aliases(connection, row["id"]),
+    }
+
+
+def _fetch_profile_row(
+    connection: sqlite3.Connection,
+    profile_id: int,
+) -> sqlite3.Row:
+    row = connection.execute(
+        """
+        SELECT id, profile_key, display_name, voice_id
+        FROM voice_profiles
+        WHERE id = ?
+        """,
+        (profile_id,),
+    ).fetchone()
+
+    if row is None:
+        raise VoiceProfileNotFoundError("Voice profile not found.")
+
+    return row
+
+
 def add_voice_profile(
     profile_key: str,
     display_name: str,
@@ -159,6 +270,19 @@ def add_voice_profile(
 
     with closing(connect_database(database_path)) as connection:
         with connection:
+            if _profile_key_exists(connection, profile_key.strip()):
+                raise ProfileKeyConflictError(
+                    "A voice profile with that profile key already exists."
+                )
+
+            if any(
+                _alias_exists(connection, alias)
+                for alias in normalized_aliases
+            ):
+                raise SenderAliasConflictError(
+                    "A normalized sender alias already exists."
+                )
+
             try:
                 return _insert_voice_profile(
                     connection,
@@ -168,9 +292,247 @@ def add_voice_profile(
                     normalized_aliases,
                 )
             except sqlite3.IntegrityError as error:
-                raise ValueError(
-                    "The profile key or a normalized sender alias already exists."
+                if "voice_profiles.profile_key" in str(error):
+                    raise ProfileKeyConflictError(
+                        "A voice profile with that profile key already exists."
+                    ) from error
+
+                raise SenderAliasConflictError(
+                    "A normalized sender alias already exists."
                 ) from error
+
+
+def list_voice_profiles(
+    database_path: str | Path | None = None,
+) -> list[dict[str, object]]:
+    """Return all voice profiles and aliases ordered by database ID."""
+
+    with closing(connect_database(database_path)) as connection:
+        rows = connection.execute(
+            """
+            SELECT id, profile_key, display_name, voice_id
+            FROM voice_profiles
+            ORDER BY id
+            """
+        ).fetchall()
+
+        return [_profile_result(connection, row) for row in rows]
+
+
+def get_voice_profile(
+    profile_id: int,
+    database_path: str | Path | None = None,
+) -> dict[str, object]:
+    """Return one voice profile and its aliases."""
+
+    with closing(connect_database(database_path)) as connection:
+        row = _fetch_profile_row(connection, profile_id)
+        return _profile_result(connection, row)
+
+
+def update_voice_profile(
+    profile_id: int,
+    *,
+    profile_key: str | None = None,
+    display_name: str | None = None,
+    voice_id: str | None = None,
+    database_path: str | Path | None = None,
+) -> dict[str, object]:
+    """Update supplied fields on one voice profile transactionally."""
+
+    updates: dict[str, str] = {}
+
+    if profile_key is not None:
+        cleaned_profile_key = profile_key.strip()
+        if not cleaned_profile_key:
+            raise ValueError("profile_key cannot be blank.")
+        updates["profile_key"] = cleaned_profile_key
+
+    if display_name is not None:
+        cleaned_display_name = display_name.strip()
+        if not cleaned_display_name:
+            raise ValueError("display_name cannot be blank.")
+        updates["display_name"] = cleaned_display_name
+
+    if voice_id is not None:
+        cleaned_voice_id = voice_id.strip()
+        if not cleaned_voice_id:
+            raise ValueError("voice_id cannot be blank.")
+        updates["voice_id"] = cleaned_voice_id
+
+    if not updates:
+        raise ValueError("At least one profile field is required.")
+
+    with closing(connect_database(database_path)) as connection:
+        with connection:
+            _fetch_profile_row(connection, profile_id)
+
+            if "profile_key" in updates and _profile_key_exists(
+                connection,
+                updates["profile_key"],
+                profile_id,
+            ):
+                raise ProfileKeyConflictError(
+                    "A voice profile with that profile key already exists."
+                )
+
+            assignments = [f"{column} = ?" for column in updates]
+            assignments.append("updated_at = CURRENT_TIMESTAMP")
+            parameters = [*updates.values(), profile_id]
+
+            try:
+                connection.execute(
+                    f"""
+                    UPDATE voice_profiles
+                    SET {", ".join(assignments)}
+                    WHERE id = ?
+                    """,
+                    parameters,
+                )
+            except sqlite3.IntegrityError as error:
+                raise ProfileKeyConflictError(
+                    "A voice profile with that profile key already exists."
+                ) from error
+
+            row = _fetch_profile_row(connection, profile_id)
+            return _profile_result(connection, row)
+
+
+def delete_voice_profile(
+    profile_id: int,
+    database_path: str | Path | None = None,
+) -> None:
+    """Delete a voice profile and its aliases through foreign-key cascade."""
+
+    with closing(connect_database(database_path)) as connection:
+        with connection:
+            cursor = connection.execute(
+                "DELETE FROM voice_profiles WHERE id = ?",
+                (profile_id,),
+            )
+
+            if cursor.rowcount == 0:
+                raise VoiceProfileNotFoundError(
+                    "Voice profile not found."
+                )
+
+
+def add_sender_alias(
+    profile_id: int,
+    alias: str,
+    database_path: str | Path | None = None,
+) -> dict[str, int | str]:
+    """Add one normalized alias to an existing voice profile."""
+
+    normalized_alias = normalize_alias(alias)
+    if not normalized_alias:
+        raise ValueError("Sender alias cannot be blank.")
+
+    with closing(connect_database(database_path)) as connection:
+        with connection:
+            _fetch_profile_row(connection, profile_id)
+
+            if _alias_exists(connection, normalized_alias):
+                raise SenderAliasConflictError(
+                    "A normalized sender alias already exists."
+                )
+
+            try:
+                cursor = connection.execute(
+                    """
+                    INSERT INTO sender_aliases (
+                        voice_profile_id,
+                        normalized_alias
+                    ) VALUES (?, ?)
+                    """,
+                    (profile_id, normalized_alias),
+                )
+            except sqlite3.IntegrityError as error:
+                raise SenderAliasConflictError(
+                    "A normalized sender alias already exists."
+                ) from error
+
+            return {
+                "id": cursor.lastrowid,
+                "normalized_alias": normalized_alias,
+            }
+
+
+def update_sender_alias(
+    alias_id: int,
+    alias: str,
+    database_path: str | Path | None = None,
+) -> dict[str, int | str]:
+    """Replace one sender alias with its normalized new value."""
+
+    normalized_alias = normalize_alias(alias)
+    if not normalized_alias:
+        raise ValueError("Sender alias cannot be blank.")
+
+    with closing(connect_database(database_path)) as connection:
+        with connection:
+            row = connection.execute(
+                """
+                SELECT id, normalized_alias
+                FROM sender_aliases
+                WHERE id = ?
+                """,
+                (alias_id,),
+            ).fetchone()
+
+            if row is None:
+                raise SenderAliasNotFoundError(
+                    "Sender alias not found."
+                )
+
+            if row["normalized_alias"] == normalized_alias:
+                return {
+                    "id": row["id"],
+                    "normalized_alias": row["normalized_alias"],
+                }
+
+            if _alias_exists(connection, normalized_alias, alias_id):
+                raise SenderAliasConflictError(
+                    "A normalized sender alias already exists."
+                )
+
+            try:
+                connection.execute(
+                    """
+                    UPDATE sender_aliases
+                    SET normalized_alias = ?
+                    WHERE id = ?
+                    """,
+                    (normalized_alias, alias_id),
+                )
+            except sqlite3.IntegrityError as error:
+                raise SenderAliasConflictError(
+                    "A normalized sender alias already exists."
+                ) from error
+
+            return {
+                "id": alias_id,
+                "normalized_alias": normalized_alias,
+            }
+
+
+def delete_sender_alias(
+    alias_id: int,
+    database_path: str | Path | None = None,
+) -> None:
+    """Delete one sender alias, including a profile's final alias."""
+
+    with closing(connect_database(database_path)) as connection:
+        with connection:
+            cursor = connection.execute(
+                "DELETE FROM sender_aliases WHERE id = ?",
+                (alias_id,),
+            )
+
+            if cursor.rowcount == 0:
+                raise SenderAliasNotFoundError(
+                    "Sender alias not found."
+                )
 
 
 def _bootstrap_environment_mappings(
