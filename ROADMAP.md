@@ -150,20 +150,15 @@ Ray-Ban Meta glasses
 
 ### Milestone 14 — Public-Readiness Security Pass
 
-Status: In Progress 🟡
+Status: Complete ✅
 
-Goal:
+Completed the security, privacy, configuration, and documentation review
+needed for public release. A clean public recruiter-facing repository was
+created and audited.
 
-Prepare the repository to become public and recruiter-ready.
-
-Current work includes:
-
-- removing hard-coded environment-specific Android backend configuration,
-- documenting local Android configuration through `android/local.properties.example`,
-- adding optional app-key protection for hosted TTS endpoints,
-- updating README and demo documentation,
-- reviewing current source for secrets and privacy issues,
-- and deciding how to handle historical custom voice IDs before publication.
+The completed work includes environment-based private configuration,
+optional protection for hosted TTS endpoints, public documentation, and
+repository secret/privacy review.
 
 ---
 
@@ -171,9 +166,33 @@ Current work includes:
 
 ### Milestone 15 — Persistent Voice Mappings
 
-Status: Not Started ⬜
+Status: In Progress 🟡
 
 Replace hard-coded sender mappings with persistent storage.
+
+### Milestone 15A — SQLite Storage Foundation
+
+Status: Complete ✅
+
+Added persistent voice-mapping storage with Python's built-in `sqlite3`.
+Voice profiles can own multiple normalized sender aliases. Environment
+mappings seed an empty database only once, after which SQLite becomes the
+source of truth. Automated tests verify initialization, normalization,
+transactions, bootstrap protection, and unknown-sender fallback behavior.
+
+### Milestone 15B — Voice Mapping Management API
+
+Status: Not Started ⬜
+
+Add safe backend CRUD operations for viewing, creating, editing, and
+deleting voice mappings.
+
+### Milestone 15C — End-to-End Persistent Mapping Verification
+
+Status: Not Started ⬜
+
+Verify persistent mappings with the existing Android notification workflow
+and with hosted and local deployment behavior.
 
 ### Milestone 16 — Contact Voice Assignment UI
 
@@ -232,16 +251,18 @@ Review the app with accessibility-first UI expectations and eventually test with
 
 ## Current Priority
 
-The immediate priority is public-readiness:
+The immediate priority is Milestone 15B — Voice Mapping Management API:
 
 ```text
-security/config cleanup
+define safe mapping operations
     ↓
-secret and privacy audit
+add backend CRUD endpoints
     ↓
-documentation consistency check
+test validation and persistence behavior
     ↓
-public/recruiter-ready decision
+prepare end-to-end verification
 ```
 
-After the repository is safe to make public, development can return to product features such as contact-to-voice management and reliability improvements.
+Milestone 15B will make the completed SQLite foundation manageable before
+the existing Android notification flow is verified against persistent
+mappings in Milestone 15C.

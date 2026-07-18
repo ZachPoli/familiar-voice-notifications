@@ -242,7 +242,10 @@ Create a local `.env` file for development:
 ELEVENLABS_API_KEY=your_api_key
 ZACH_VOICE_ID=your_zach_voice_id
 EMILY_VOICE_ID=your_emily_voice_id
+ZACH_SENDER_ALIASES=sender_one,sender_one_full_name
+EMILY_SENDER_ALIASES=sender_two
 VOICE_GLASSES_API_KEY=your_private_shared_app_key
+VOICE_MAPPINGS_DB_PATH=data/voice_mappings.sqlite3
 ```
 
 Do not commit `.env`.
@@ -254,6 +257,32 @@ X-Voice-Glasses-Key
 ```
 
 This protects the hosted backend from random public requests triggering ElevenLabs text-to-speech generation.
+
+### Voice-Mapping Storage
+
+The backend stores sender-to-voice mappings in SQLite. On the first
+startup of a completely empty database, the current `ZACH_*` and
+`EMILY_*` environment values can bootstrap voice profiles and normalized
+sender aliases. Each profile requires both a nonblank voice-ID variable
+and at least one explicitly configured alias; no implicit default aliases
+are assigned. After that one-time bootstrap, SQLite is the source of truth:
+later environment changes do not overwrite, resynchronize, or recreate
+database mappings.
+
+The default local database path is:
+
+```text
+data/voice_mappings.sqlite3
+```
+
+That generated file and its SQLite sidecar files are ignored by Git.
+Set `VOICE_MAPPINGS_DB_PATH` to use a different location. Hosted
+environments need to place the database on durable mounted storage if
+mappings must survive deployments or instance replacement.
+
+This SQLite database is prototype storage and is not encrypted. Voice
+IDs and private sender aliases must not be committed or placed in public
+documentation.
 
 Install backend dependencies:
 
@@ -410,15 +439,15 @@ FamiliarVoice Notifications is a working technical prototype, not a production a
 Current limitations include:
 
 - only Google Messages is supported,
-- sender-to-voice mappings are still hard-coded in backend logic,
-- there is no user database,
+- SQLite voice-mapping storage has no user-facing management workflow,
+- the prototype SQLite database is not encrypted,
 - there is no full production authentication system,
 - there is no contact-management interface,
 - there is no voice-assignment interface,
 - there is no explicit guaranteed audio queue,
 - network retry behavior is limited,
 - offline behavior is not yet implemented,
-- automated tests have not yet been added,
+- automated coverage is currently focused on the storage foundation,
 - hosted free-tier services may have cold starts,
 - and testing has been performed on a limited number of devices.
 

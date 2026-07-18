@@ -1,5 +1,6 @@
 import hmac
 import os
+from contextlib import asynccontextmanager
 
 import uvicorn
 from dotenv import load_dotenv
@@ -8,26 +9,29 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 
+from voice_mapping_store import (
+    find_voice_id_for_sender,
+    initialize_database,
+)
+
 
 load_dotenv()
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Initialize local voice-mapping storage once at startup."""
+
+    initialize_database()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 # Default ElevenLabs voice.
 # Unknown senders use this voice.
 DEFAULT_VOICE_ID = "pNInz6obpgDQGcFmaJgB"
-
-
-# Custom voice IDs are loaded from environment variables.
-EMILY_VOICE_ID = os.getenv("EMILY_VOICE_ID")
-ZACH_VOICE_ID = os.getenv("ZACH_VOICE_ID")
-
-
-# Sender aliases are also loaded from environment variables so that
-# private contact names do not need to be committed to source code.
-ZACH_SENDER_ALIASES = os.getenv("ZACH_SENDER_ALIASES", "zach")
-EMILY_SENDER_ALIASES = os.getenv("EMILY_SENDER_ALIASES", "emily")
 
 
 # Optional shared key for protecting hosted TTS endpoints.
@@ -40,46 +44,6 @@ class Notification(BaseModel):
     sender: str
     app: str
     message: str
-
-
-def normalize_sender(value: str) -> str:
-    """
-    Normalize sender and alias values for comparison.
-    """
-
-    return " ".join(
-        value.strip().lower().split()
-    )
-
-
-def parse_sender_aliases(value: str) -> set[str]:
-    """
-    Convert a comma-separated alias list into normalized aliases.
-    """
-
-    aliases = set()
-
-    for alias in value.split(","):
-        normalized_alias = normalize_sender(alias)
-
-        if normalized_alias:
-            aliases.add(normalized_alias)
-
-    return aliases
-
-
-def sender_matches_aliases(
-    sender: str,
-    aliases: set[str],
-) -> bool:
-    """
-    Return True when the normalized sender exactly matches one
-    configured alias.
-    """
-
-    normalized_sender = normalize_sender(sender)
-
-    return normalized_sender in aliases
 
 
 def require_voice_glasses_api_key(
@@ -116,26 +80,11 @@ def get_voice_id(sender: str) -> str:
     """
     Return the voice assigned to a sender.
 
-    Sender matching is based on comma-separated alias lists from
-    environment variables. Unknown senders use the default voice.
+    Sender matching uses persistent SQLite mappings. Unknown senders
+    use the default voice.
     """
 
-    zach_aliases = parse_sender_aliases(ZACH_SENDER_ALIASES)
-    emily_aliases = parse_sender_aliases(EMILY_SENDER_ALIASES)
-
-    if ZACH_VOICE_ID and sender_matches_aliases(
-        sender,
-        zach_aliases,
-    ):
-        return ZACH_VOICE_ID
-
-    if EMILY_VOICE_ID and sender_matches_aliases(
-        sender,
-        emily_aliases,
-    ):
-        return EMILY_VOICE_ID
-
-    return DEFAULT_VOICE_ID
+    return find_voice_id_for_sender(sender) or DEFAULT_VOICE_ID
 
 
 def create_audio_stream(

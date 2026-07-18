@@ -178,6 +178,7 @@ Main backend technologies:
 - FastAPI
 - Uvicorn
 - Pydantic
+- Python `sqlite3`
 - ElevenLabs Python client
 - python-dotenv
 
@@ -202,38 +203,54 @@ The backend loads private configuration from environment variables:
 ELEVENLABS_API_KEY
 ZACH_VOICE_ID
 EMILY_VOICE_ID
+ZACH_SENDER_ALIASES
+EMILY_SENDER_ALIASES
 VOICE_GLASSES_API_KEY
+VOICE_MAPPINGS_DB_PATH
 ```
 
 `ELEVENLABS_API_KEY` is required for speech generation.
 
-`ZACH_VOICE_ID` and `EMILY_VOICE_ID` are prototype sender-specific voice mappings.
+The `ZACH_*` and `EMILY_*` values are optional first-run seed inputs for
+the SQLite voice-mapping database. They are not reapplied after bootstrap.
 
 `VOICE_GLASSES_API_KEY` protects hosted TTS endpoints from unauthenticated public use.
+
+`VOICE_MAPPINGS_DB_PATH` selects the SQLite database location. Its local
+default is `data/voice_mappings.sqlite3`, resolved from the backend
+directory rather than the current shell directory. The default database
+and its sidecar files are ignored by Git. Hosted environments require a
+durable mounted location if mappings must persist across deployments.
 
 ---
 
 ## Voice Routing
 
-The backend currently performs simple case-insensitive sender-name matching.
+The backend uses SQLite voice profiles and sender aliases. One voice
+profile can own multiple aliases. Aliases are stripped, case-folded, and
+have repeated whitespace collapsed before they are stored or matched.
+
+On the first startup of a completely empty database, environment mappings
+can seed the initial profiles and aliases. SQLite becomes the source of
+truth after that bootstrap. Later environment changes do not overwrite,
+resynchronize, or recreate user-edited mappings. A populated database
+without bootstrap metadata is treated as user-owned and is not seeded.
 
 Current logical behavior:
 
 ```text
-sender = Emily
+normalized sender matches a stored alias
     ↓
-EMILY_VOICE_ID
+stored voice ID
 
-sender = Zach
-    ↓
-ZACH_VOICE_ID
-
-any other sender
+unknown sender
     ↓
 DEFAULT_VOICE_ID
 ```
 
-This is an MVP-level routing system. Future versions should replace hard-coded sender names with persistent user-managed contact-to-voice mappings.
+The SQLite file contains private sender aliases and voice IDs. It is
+prototype storage and is not encrypted. A contact-management and
+voice-assignment interface is not part of this foundation milestone.
 
 ---
 
@@ -280,14 +297,14 @@ The current implementation is intentionally simple.
 Known limitations:
 
 - only Google Messages is supported,
-- sender-to-voice mappings are hard-coded,
-- no persistent database is implemented,
+- SQLite mappings do not yet have a user-facing management workflow,
+- the prototype SQLite database is not encrypted,
 - no contact-management UI exists yet,
 - no voice-assignment UI exists yet,
 - no explicit audio queue exists yet,
 - network retry behavior is limited,
 - offline behavior is not implemented,
-- automated tests are not yet added,
+- automated coverage is currently focused on SQLite storage behavior,
 - and the current app-key protection is not a full production authentication system.
 
 ---

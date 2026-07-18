@@ -10,7 +10,8 @@ The project was inspired by Zach's father and grandmother, who are blind. The go
 
 ## Current Status
 
-The first complete end-to-end MVP prototype is working.
+The first complete end-to-end MVP prototype is working, and the Milestone
+15A SQLite voice-mapping storage foundation is complete.
 
 The project has now demonstrated:
 
@@ -21,11 +22,15 @@ The project has now demonstrated:
 - hosted backend deployment,
 - ElevenLabs text-to-speech generation,
 - sender-specific voice routing,
+- persistent SQLite voice-mapping storage,
 - MP3 return to Android,
 - Android MediaPlayer playback,
 - and audio output through Ray-Ban Meta glasses.
 
-The current portfolio phase is public-readiness cleanup: security, privacy, configuration, and documentation review before making the repository public.
+The public-readiness security pass is complete. A clean public
+recruiter-facing repository was created and audited. Product development
+has resumed with persistent voice mappings, and Milestone 15B is the next
+target.
 
 ---
 
@@ -103,6 +108,29 @@ Responsibilities:
 - call ElevenLabs text-to-speech,
 - and stream MP3 audio back to Android.
 
+### SQLite Voice-Mapping Storage
+
+Primary file:
+
+```text
+voice_mapping_store.py
+```
+
+Responsibilities:
+
+- initialize the SQLite schema during FastAPI startup,
+- store voice profiles with multiple normalized sender aliases,
+- resolve incoming senders to stored voice mappings,
+- preserve the default voice fallback for unknown senders,
+- and enforce transactional bootstrap and mapping writes.
+
+On the first startup of a new, empty database, explicitly configured
+environment mappings can seed initial profiles. Each seed requires both a
+voice ID and at least one sender alias. Bootstrap runs only once; SQLite is
+the source of truth afterward, so later environment changes do not
+overwrite or recreate stored mappings. A populated database is treated as
+user-owned and is not overwritten.
+
 ### ElevenLabs
 
 Used for sender-specific speech generation.
@@ -146,13 +174,13 @@ Voice Glasses is still a prototype, not a production app.
 Known limitations:
 
 - only Google Messages is currently supported,
-- sender-to-voice mappings are hard-coded,
-- there is no database,
-- there is no contact-management UI,
-- there is no voice-assignment UI,
+- there is not yet a voice-mapping management API,
+- there is not yet a contact-assignment UI,
+- the SQLite database is not encrypted,
+- hosted persistence requires durable mounted storage,
 - there is no explicit message queue,
 - retry/offline behavior is limited,
-- automated tests are not yet added,
+- automated coverage is currently focused on the SQLite storage foundation,
 - free-tier hosted backend cold starts can affect latency,
 - and the current app-key protection is a prototype security measure, not a full production auth system.
 
@@ -160,18 +188,14 @@ Known limitations:
 
 ## Immediate Priority
 
-Before public release:
+Milestone 15B — Voice Mapping Management API:
 
 ```text
-finish security/config cleanup
+define safe mapping operations
         ↓
-set hosted VOICE_GLASSES_API_KEY
+add backend create/read/update/delete behavior
         ↓
-pull and configure Android local.properties
+test validation and persistent changes
         ↓
-rebuild and retest real SMS
-        ↓
-review historical custom voice ID issue
-        ↓
-final public-readiness decision
+prepare Milestone 15C end-to-end verification
 ```
