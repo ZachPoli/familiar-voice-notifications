@@ -166,7 +166,7 @@ repository secret/privacy review.
 
 ### Milestone 15 — Persistent Voice Mappings
 
-Status: In Progress 🟡
+Status: Complete ✅
 
 Replace hard-coded sender mappings with persistent storage.
 
@@ -194,7 +194,7 @@ CRUD behavior.
 
 ### Milestone 15C — End-to-End Persistent Mapping Verification
 
-Status: In Progress 🟡
+Status: Complete ✅
 
 Verify persistent mappings with the existing Android notification workflow
 and with hosted and local deployment behavior.
@@ -217,15 +217,27 @@ database files and clean up only files they create.
 
 ### Milestone 15C-2 — Hosted Persistence and Android Verification
 
-Status: Not Started ⬜
+Status: Complete ✅
 
-This milestone will identify the current Render source repository and
-deployed commit, determine whether durable persistent storage is available,
-and configure a durable SQLite path or choose another safe hosted-storage
-approach. It will then deploy the reviewed public repository, prove that a
-synthetic hosted mapping survives restart or redeployment, and perform a
-controlled real SMS test through the Android app. Physical-hardware testing
-will verify known-sender routing and unknown-sender fallback.
+Switched the Render service from the archived repository to
+`ZachPoli/familiar-voice-notifications` and successfully deployed the
+reviewed commit. The service was upgraded to Render Starter with a 1 GB
+persistent disk mounted at `/var/data`, and SQLite now uses a database path
+beneath that persistent mount. Management and notification authentication
+keys remained separate.
+
+Authenticated hosted bootstrap produced one configured profile with two
+aliases, while unauthenticated management access returned 401. A synthetic
+profile survived a real Render service restart and was then deleted
+successfully. On physical hardware, a real SMS from a mapped sender used the
+mapped familiar voice, and a real SMS from an unmapped sender used the
+default voice. Both results played through Ray-Ban Meta glasses. No
+production or Android code changes were required.
+
+One non-blocking follow-up remains: an automated verification-code SMS that
+was visible in Google Messages did not produce a backend request. The cause
+is unconfirmed and should be investigated later as an Android
+notification-parsing edge case.
 
 ### Milestone 16 — Contact Voice Assignment UI
 
@@ -386,18 +398,15 @@ documentation when each release milestone begins.
 
 ## Current Priority
 
-The immediate priority is Milestone 15C-2 — Hosted Persistence and Android
-Verification:
+The immediate priority is Milestone 16 — Contact Voice Assignment UI:
 
 ```text
-identify the Render source repository and deployed commit
+design the contact and mapping workflow
     ↓
-confirm or configure durable hosted storage
+connect the Android experience to the management API
     ↓
-deploy and verify persistence across restart or redeployment
-    ↓
-run a controlled Android SMS test on physical hardware
+support assigning familiar voices to contacts
 ```
 
-Hosted persistence and the real Android SMS workflow remain unverified and
-are the remaining work for Milestone 15C.
+Milestone 15 and its SQLite storage, management API, local verification,
+hosted persistence, and physical Android verification work are complete.

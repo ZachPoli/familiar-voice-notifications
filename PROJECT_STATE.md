@@ -10,10 +10,10 @@ The project was inspired by Zach's father and grandmother, who are blind. The go
 
 ## Current Status
 
-The first complete end-to-end MVP prototype is working. Milestone 15A's
-SQLite voice-mapping storage foundation, Milestone 15B's voice-mapping
-management API, and Milestone 15C-1's local persistent-mapping verification
-are complete.
+The first complete end-to-end MVP prototype is working. Milestone 15 and all
+of its sub-milestones are complete: SQLite voice-mapping storage, the
+management API, local persistence verification, hosted persistence, and
+physical Android verification.
 
 The project has now demonstrated:
 
@@ -33,8 +33,8 @@ The project has now demonstrated:
 The public-readiness security pass is complete. A clean public
 recruiter-facing repository was created and audited. Product development
 has resumed with persistent voice mappings. The current automated suite
-has 68 passing tests. Milestone 15C remains in progress, with hosted
-persistence and Android verification as the next development target.
+has 68 passing tests. Milestone 16, the contact voice-assignment UI, is the
+next development target.
 
 ---
 
@@ -153,6 +153,23 @@ disposable database through a count-and-boolean-only verification report.
 The normal local database was not modified. No production or Android changes
 were required, and all 68 automated tests pass.
 
+### Hosted Persistence and Android Verification
+
+The active Render service now deploys the reviewed public
+`ZachPoli/familiar-voice-notifications` repository. It runs on Render Starter
+with a durable 1 GB disk mounted at `/var/data`, and SQLite storage is
+configured beneath that persistent mount.
+
+Authenticated hosted bootstrap completed successfully, with management and
+notification authentication remaining separate. A synthetic profile
+survived a real service restart and was deleted successfully afterward.
+Unauthenticated management access continued to return 401.
+
+Physical-device tests confirmed that an SMS from a mapped sender used the
+mapped familiar voice and an SMS from an unknown sender retained the default
+voice fallback. Both audio results played through Ray-Ban Meta glasses. No
+production or Android code changes were required for this verification.
+
 ### ElevenLabs
 
 Used for sender-specific speech generation.
@@ -212,16 +229,18 @@ Known limitations:
 - there is no end-user authentication system yet,
 - management currently requires developer or administrator API access,
 - the SQLite database is not encrypted,
-- hosted persistence requires durable mounted storage,
+- durable hosted storage is configured on the current Render service,
 - there is no explicit message queue,
 - retry/offline behavior is limited,
+- an automated SMS visible in Google Messages did not produce a backend
+  request; the cause is unconfirmed and remains an Android
+  notification-parsing edge case for later investigation,
 - TalkBack coexistence has not yet been tested,
 - current automatic playback may duplicate or overlap TalkBack speech,
 - accessible on-demand playback is planned,
 - the product must remain usable with TalkBack enabled,
 - automated coverage includes 68 storage, management API, authentication,
   validation, privacy, persistence, and compatibility tests,
-- free-tier hosted backend cold starts can affect latency,
 - and the current app-key protection is a prototype security measure, not a full production auth system.
 
 ---
@@ -246,18 +265,16 @@ Play production release.
 
 ## Immediate Priority
 
-Milestone 15C-2 — Hosted Persistence and Android Verification:
+Milestone 16 — Contact Voice Assignment UI:
 
 ```text
-identify the Render source repository and deployed commit
+design an accessible contact and mapping workflow
         ↓
-determine and configure a durable hosted-storage approach
+connect the Android app to the existing management API
         ↓
-prove a synthetic hosted mapping survives restart or redeployment
-        ↓
-run a controlled real SMS test through the Android app
+support persistent familiar-voice assignment for contacts
 ```
 
-Hosted persistence and the real Android SMS test remain incomplete. This
-work will preserve the working Android notification flow while verifying
-known-sender routing and unknown-sender fallback on physical hardware.
+Milestone 15 is complete. The next product-development step is to add the
+contact voice-assignment experience without disrupting the proven Android
+notification and playback flow.
